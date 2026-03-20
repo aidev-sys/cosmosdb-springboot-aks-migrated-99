@@ -1,76 +1,59 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License.
 package com.azure.cosmosdb.demo;
 
-import com.azure.cosmos.CosmosClientBuilder;
-import com.azure.cosmos.DirectConnectionConfig;
-import com.azure.cosmos.GatewayConnectionConfig;
-import com.azure.spring.data.cosmos.config.AbstractCosmosConfiguration;
-import com.azure.spring.data.cosmos.config.CosmosConfig;
-import com.azure.spring.data.cosmos.core.ResponseDiagnostics;
-import com.azure.spring.data.cosmos.core.ResponseDiagnosticsProcessor;
-import com.azure.spring.data.cosmos.repository.config.EnableCosmosRepositories;
-import com.azure.spring.data.cosmos.repository.config.EnableReactiveCosmosRepositories;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import jakarta.persistence.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.lang.Nullable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import javax.sql.DataSource;
+import java.util.List;
 
 @Configuration
 @EnableConfigurationProperties(CosmosProperties.class)
-@EnableCosmosRepositories
-@EnableReactiveCosmosRepositories
+@EnableJpaRepositories(basePackages = "com.azure.cosmosdb.demo.repository")
 @PropertySource("classpath:application.properties")
-public class CosmosSpringConfiguration extends AbstractCosmosConfiguration {
-    private static final Logger logger = LoggerFactory.getLogger(CosmosSpringConfiguration.class);
-
-    private CosmosProperties properties;
-
-    CosmosSpringConfiguration(CosmosProperties properties){
-        this.properties = properties;
-    }
+@EnableTransactionManagement
+public class CosmosSpringConfiguration {
 
     @Bean
-    public CosmosClientBuilder cosmosBuildClient() {
-        DirectConnectionConfig directConnectionConfig = DirectConnectionConfig.getDefaultConfig();
-        
-        //use this for gateway connection
-        GatewayConnectionConfig gatewayConnectionConfig = GatewayConnectionConfig.getDefaultConfig(); 
-
-        return new CosmosClientBuilder()
-            .endpoint(properties.getUri())
-            .key(properties.getKey())
-            .directMode(directConnectionConfig);
+    public DataSource dataSource() {
+        // Implementation would depend on your specific data source setup
+        return null;
     }
 
-    @Bean
-    public CosmosConfig cosmosConfig() {
-        return CosmosConfig.builder()
-                           .responseDiagnosticsProcessor(new ResponseDiagnosticsProcessorImplementation(this.properties))
-                           .enableQueryMetrics(properties.isQueryMetricsEnabled())
-                           .build();
-    }
+    @Entity
+    @Table(name = "cosmos_entities")
+    public static class CosmosEntity {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
 
-    private static class ResponseDiagnosticsProcessorImplementation implements ResponseDiagnosticsProcessor {
+        @Column(name = "entity_data")
+        private String entityData;
 
-        private CosmosProperties properties;
-        ResponseDiagnosticsProcessorImplementation(CosmosProperties properties){
-            this.properties = properties;
+        // Getters and setters
+        public Long getId() {
+            return id;
         }
 
-        @Override
-        public void processResponseDiagnostics(@Nullable ResponseDiagnostics responseDiagnostics) {
-            if(this.properties.isResponseDiagnosticsEnabled()){
-                logger.info("Response Diagnostics {}", responseDiagnostics);
-            }
+        public void setId(Long id) {
+            this.id = id;
+        }
+
+        public String getEntityData() {
+            return entityData;
+        }
+
+        public void setEntityData(String entityData) {
+            this.entityData = entityData;
         }
     }
 
-    @Override
-    protected String getDatabaseName() {
-        return properties.getDatabase();
+    public interface CosmosEntityRepository extends JpaRepository<CosmosEntity, Long> {
+        List<CosmosEntity> findByEntityDataContaining(String entityData);
     }
 }

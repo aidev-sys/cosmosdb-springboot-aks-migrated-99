@@ -1,16 +1,25 @@
 package com.azure.cosmosdb.demo;
 
-import com.azure.spring.data.cosmos.core.mapping.Container;
-import com.azure.spring.data.cosmos.core.mapping.PartitionKey;
+import jakarta.persistence.*;
 import org.springframework.data.annotation.Id;
 
-@Container(containerName = "users")
+@Entity
+@Table(name = "users")
 public class User {
-    @Id
-    @PartitionKey
+    @jakarta.persistence.Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
+    
+    @Column(name = "first_name")
     private String firstName;
+    
+    @Column(name = "last_name")
     private String lastName;
+    
+    @Column(name = "city")
     private String city;
 
     public User() {
@@ -22,6 +31,14 @@ public class User {
         this.firstName = firstName;
         this.lastName = lastName;
         this.city = city;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getEmail() {
@@ -58,7 +75,6 @@ public class User {
 
     @Override
     public String toString() {
-        return "User [city=" + city + ", email=" + email + ", firstName=" + firstName + ", lastName=" + lastName + "]";
+        return "User [id=" + id + ", city=" + city + ", email=" + email + ", firstName=" + firstName + ", lastName=" + lastName + "]";
     }
-
 }
